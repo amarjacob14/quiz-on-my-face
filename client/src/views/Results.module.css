@@ -1,0 +1,134 @@
+.resultsPage {
+  min-height: 100vh;
+  background: var(--bg);
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(108, 71, 255, 0.15) 0%, transparent 55%);
+  padding: 24px 16px 48px;
+}
+
+.content {
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.header {
+  text-align: center;
+  padding-bottom: 8px;
+}
+
+.title {
+  font-size: 2rem;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+}
+
+/* Winner card */
+.winnerCard {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  background: rgba(255, 215, 0, 0.07);
+  border: 2px solid rgba(255, 215, 0, 0.25);
+  border-radius: var(--radius-lg);
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.winnerTrophy {
+  font-size: 3.5rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.winnerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.winnerLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.winnerName {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffd700;
+}
+
+.winnerScore {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* My result */
+.myResultCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.myRankMsg {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.myStats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.myStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.myStatVal {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.myStatLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* Leaderboard */
+.leaderboard {}
+
+.leaderboardTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}

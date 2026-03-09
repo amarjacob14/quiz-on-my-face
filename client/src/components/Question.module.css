@@ -1,0 +1,48 @@
+.questionWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.progress {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+}
+
+.category {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.difficulty {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  margin-left: auto;
+}
+
+.questionText {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.large .questionText,
+.questionTextLarge {
+  font-size: 2rem;
+  line-height: 1.3;
+}

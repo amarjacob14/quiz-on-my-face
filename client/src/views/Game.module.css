@@ -1,0 +1,189 @@
+.gamePage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  gap: 16px;
+}
+
+.questionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.timerRow {
+  display: flex;
+  justify-content: center;
+}
+
+.answersSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.tapHint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.answerFeedback {
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  text-align: center;
+  font-size: 1rem;
+  animation: slideUp 0.3s ease forwards;
+}
+
+.feedbackCorrect {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1.5px solid var(--success);
+  color: #86efac;
+}
+
+.feedbackWrong {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1.5px solid var(--danger);
+  color: #fca5a5;
+}
+
+/* Waiting */
+.waitingScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.finishedIcon {
+  font-size: 4rem;
+}
+
+/* Round end */
+.roundEndScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.roundEndTitle {
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.myResult {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: var(--radius-lg);
+  border: 2px solid;
+}
+
+.myResult.correct {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: var(--success);
+}
+
+.myResult.incorrect {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: var(--danger);
+}
+
+.myResultIcon {
+  font-size: 2rem;
+  font-weight: 900;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.correct .myResultIcon {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+}
+
+.incorrect .myResultIcon {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+.myResultPts {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.myResultTotal {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.correctAnswerBanner {
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.correctAnswerLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.correctAnswerText {
+  font-weight: 700;
+  color: var(--success);
+}
+
+.scoreboardWrap {
+  flex: 1;
+}
+
+.scoreboardTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.nextHint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+  padding-bottom: 24px;
+}

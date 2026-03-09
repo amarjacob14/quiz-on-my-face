@@ -1,0 +1,129 @@
+.scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: transform 0.3s ease;
+  animation: slideUp 0.4s ease forwards;
+}
+
+.first {
+  border-color: rgba(255, 215, 0, 0.4);
+  background: rgba(255, 215, 0, 0.06);
+}
+
+.me {
+  border-color: var(--primary);
+  background: rgba(108, 71, 255, 0.08);
+}
+
+.rank {
+  width: 28px;
+  text-align: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.rankNum {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #ff6b6b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.nameWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.youBadge {
+  font-size: 0.7rem;
+  background: var(--primary);
+  color: white;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.correct {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.incorrect {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.score {
+  font-size: 1.125rem;
+  font-weight: 900;
+  color: var(--text);
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.pts {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Large variant for host screen */
+.large .row {
+  padding: 14px 20px;
+}
+
+.large .score {
+  font-size: 1.5rem;
+}
+
+.large .name {
+  font-size: 1.125rem;
+}
+
+.large .avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 1.125rem;
+}

@@ -1,0 +1,248 @@
+.hostPage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  background-image: radial-gradient(ellipse at 50% -10%, rgba(108, 71, 255, 0.25) 0%, transparent 60%);
+}
+
+/* Waiting screen */
+.waitingScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 40px;
+  text-align: center;
+}
+
+.roomCodeDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.roomCodeLabel {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.waitingText {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.playerCount {
+  font-size: 1.125rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Active game */
+.activeGame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 32px;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.roomCodeSmall {
+  font-family: monospace;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+.timerWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.answerProgress {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.answeredNum {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.answeredTotal {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.answeredLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 4px;
+}
+
+.questionWrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 40px;
+}
+
+.answersGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  flex: 1;
+}
+
+/* Round end */
+.roundEndScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.roundEndHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.roundEndTitle {
+  font-size: 2.5rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.correctAnswerBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 32px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 2px solid var(--success);
+  border-radius: var(--radius-lg);
+}
+
+.correctAnswerLabel {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.correctAnswerText {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: var(--success);
+}
+
+.scoreboardWrap {
+  flex: 1;
+}
+
+.nextHint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  font-style: italic;
+}
+
+/* Finished */
+.finishedScreen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 32px;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.trophyIcon {
+  font-size: 6rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.finishedTitle {
+  font-size: 3.5rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffd700, #ff6b6b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.finishedSubtitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.finalScoreboard {
+  width: 100%;
+}
+
+.winner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 32px;
+  background: rgba(255, 215, 0, 0.08);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: var(--radius-lg);
+  margin-top: 8px;
+}
+
+.winnerCrown {
+  font-size: 2.5rem;
+}
+
+.winnerName {
+  font-size: 2rem;
+  font-weight: 900;
+  flex: 1;
+}
+
+.winnerScore {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffd700;
+}
