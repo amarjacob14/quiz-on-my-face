@@ -4,7 +4,8 @@
  */
 
 const { gameOps } = require('./db');
-const { fetchQuestions, sanitizeQuestion } = require('./questions');
+const { fetchQuestions } = require('./questions');
+const { fetchCurrentEventsQuestions } = require('./currentEvents');
 
 const QUESTION_DURATION_MS = 20000; // 20 seconds per question
 const MAX_POINTS = 1000;
@@ -119,6 +120,20 @@ function getPlayersArray(game) {
   }));
 }
 
+async function prefetchQuestions(roomCode) {
+  const game = getGame(roomCode);
+  if (!game || game.questions) return; // already fetched
+  try {
+    const questions = game.category === 'current-events'
+      ? await fetchCurrentEventsQuestions({ amount: game.numQuestions, difficulty: game.difficulty })
+      : await fetchQuestions({ amount: game.numQuestions, category: game.category, difficulty: game.difficulty });
+    game.questions = questions;
+    console.log(`[Room ${roomCode}] Questions pre-fetched (${questions.length})`);
+  } catch (err) {
+    console.error(`[Room ${roomCode}] Prefetch failed:`, err.message);
+  }
+}
+
 async function startGame(roomCode) {
   const game = getGame(roomCode);
   if (!game) return { error: 'Game not found' };
@@ -128,11 +143,9 @@ async function startGame(roomCode) {
   game.status = 'starting';
 
   try {
-    const questions = await fetchQuestions({
-      amount: game.numQuestions,
-      category: game.category,
-      difficulty: game.difficulty,
-    });
+    const questions = game.category === 'current-events'
+      ? await fetchCurrentEventsQuestions({ amount: game.numQuestions, difficulty: game.difficulty })
+      : await fetchQuestions({ amount: game.numQuestions, category: game.category, difficulty: game.difficulty });
     game.questions = questions;
   } catch (err) {
     game.status = 'waiting';
@@ -245,7 +258,14 @@ function nextQuestion(game) {
   }
 
   game.questionStartTime = Date.now();
-  return sanitizeQuestion(game.questions[game.currentQuestionIndex]);
+  return game.questions[game.currentQuestionIndex];
+}
+
+function peekQuestion(game) {
+  if (!game || !game.questions) return null;
+  const idx = game.currentQuestionIndex;
+  if (idx < 0 || idx >= game.questions.length) return null;
+  return game.questions[idx];
 }
 
 function finishGame(roomCode) {
@@ -263,6 +283,8 @@ function finishGame(roomCode) {
 }
 
 module.exports = {
+  peekQuestion,
+  prefetchQuestions,
   createGame,
   getGame,
   deleteGame,

@@ -43,12 +43,10 @@ if (isProd) {
 // ─── REST Routes ──────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter);
 
-// GET /api/categories
 app.get('/api/categories', (req, res) => {
   res.json({ categories: CATEGORIES });
 });
 
-// POST /api/games — create a new game room
 app.post('/api/games', verifyToken, (req, res) => {
   try {
     const { category, difficulty, numQuestions, gameMode } = req.body;
@@ -58,17 +56,10 @@ app.post('/api/games', verifyToken, (req, res) => {
     const validDifficulties = ['any', 'easy', 'medium', 'hard'];
     const validAmounts = [10, 20, 30];
 
-    if (!validModes.includes(gameMode)) {
-      return res.status(400).json({ error: 'Invalid game mode' });
-    }
-    if (!validDifficulties.includes(difficulty || 'any')) {
-      return res.status(400).json({ error: 'Invalid difficulty' });
-    }
-    if (!validAmounts.includes(Number(numQuestions))) {
-      return res.status(400).json({ error: 'numQuestions must be 10, 20, or 30' });
-    }
+    if (!validModes.includes(gameMode)) return res.status(400).json({ error: 'Invalid game mode' });
+    if (!validDifficulties.includes(difficulty || 'any')) return res.status(400).json({ error: 'Invalid difficulty' });
+    if (!validAmounts.includes(Number(numQuestions))) return res.status(400).json({ error: 'numQuestions must be 10, 20, or 30' });
 
-    // Create DB record first to get the ID
     const roomCode = generateTempCode();
     const dbResult = gameOps.create.run({
       room_code: roomCode,
@@ -90,23 +81,16 @@ app.post('/api/games', verifyToken, (req, res) => {
       dbGameId: dbResult.lastInsertRowid,
     });
 
-    // Update the DB record with the actual room code (generated in createGame)
-    if (game.roomCode !== roomCode) {
-      // If codes differ (edge case), update the DB
-      // In practice roomCode from generateTempCode won't be used
-    }
+    // Pre-fetch questions in background so they're ready when game starts
+    gm.prefetchQuestions(game.roomCode).catch(err => console.error('[Prefetch error]', err.message));
 
-    res.status(201).json({
-      roomCode: game.roomCode,
-      hostId: host.id,
-    });
+    res.status(201).json({ roomCode: game.roomCode, hostId: host.id });
   } catch (err) {
     console.error('Create game error:', err);
     res.status(500).json({ error: 'Failed to create game' });
   }
 });
 
-// GET /api/games/:code — get game info
 app.get('/api/games/:code', verifyToken, (req, res) => {
   const game = gm.getGame(req.params.code);
   if (!game) return res.status(404).json({ error: 'Game not found' });
@@ -127,18 +111,16 @@ function generateTempCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
-// ─── Catch-all: serve React app for non-API routes (production) ───────────────
 if (isProd) {
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
 }
 
-// ─── Socket.io Authentication Middleware ──────────────────────────────────────
+// ─── Socket.io Auth ───────────────────────────────────────────────────────────
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) return next(new Error('Authentication required'));
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     socket.user = decoded;
@@ -148,7 +130,7 @@ io.use((socket, next) => {
   }
 });
 
-// ─── Socket.io Event Handlers ─────────────────────────────────────────────────
+// ─── Socket.io Events ─────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   const user = socket.user;
   console.log(`[Socket] ${user.username} connected (${socket.id})`);
@@ -158,8 +140,12 @@ io.on('connection', (socket) => {
     const code = (roomCode || '').toUpperCase().trim();
     const game = gm.getGame(code);
 
-    if (!game) {
-      return callback?.({ error: 'Room not found' });
+    if (!game) return callback?.({ error: 'Room not found' });
+
+    // Allow rejoining mid-game (reconnect support)
+    const existingPlayer = game.players.get(user.id);
+    if (!existingPlayer && game.status !== 'waiting') {
+      return callback?.({ error: 'Game has already started' });
     }
 
     const result = gm.addPlayer(code, {
@@ -169,15 +155,15 @@ io.on('connection', (socket) => {
       socketId: socket.id,
     });
 
-    if (result.error) {
+    if (result.error && !existingPlayer) {
       return callback?.({ error: result.error });
     }
 
     socket.join(code);
     socket.currentRoom = code;
 
-    // Tell the joining player the current game state
     const currentGame = gm.getGame(code);
+    const currentQ = currentGame.status === 'playing' ? gm.peekQuestion(currentGame) : null;
     const gameState = {
       roomCode: code,
       hostId: currentGame.hostId,
@@ -187,29 +173,45 @@ io.on('connection', (socket) => {
       gameMode: currentGame.gameMode,
       status: currentGame.status,
       players: gm.getPlayersArray(currentGame),
+      currentQuestion: currentQ,
+      questionNumber: currentGame.currentQuestionIndex + 1,
+      totalQuestions: currentGame.numQuestions,
+      duration: gm.QUESTION_DURATION_MS,
     };
 
     callback?.({ success: true, game: gameState });
 
-    // Broadcast to everyone in the room that a new player joined
-    if (result.player.id !== currentGame.hostId || currentGame.players.size === 1) {
+    // If game is playing, send current question directly to this socket
+    if (currentGame.status === 'playing' && existingPlayer) {
+      const currentQ = gm.peekQuestion(currentGame);
+      if (currentQ) {
+        socket.emit('question', {
+          question: currentQ,
+          questionNumber: currentGame.currentQuestionIndex + 1,
+          totalQuestions: currentGame.numQuestions,
+          duration: gm.QUESTION_DURATION_MS,
+        });
+      }
+    }
+
+    // Only broadcast player-joined for genuinely new players
+    if (!existingPlayer) {
       io.to(code).emit('player-joined', {
         player: {
-          id: result.player.id,
-          username: result.player.username,
-          avatar: result.player.avatar,
-          score: result.player.score,
-          isHost: result.player.isHost,
+          id: user.id,
+          username: user.username,
+          avatar: null,
+          score: 0,
+          isHost: false,
         },
         players: gm.getPlayersArray(currentGame),
       });
     }
 
-    console.log(`[Room ${code}] ${user.username} joined`);
+    console.log(`[Room ${code}] ${user.username} ${existingPlayer ? 'reconnected' : 'joined'}`);
   });
 
   // ── host-join ─────────────────────────────────────────────────────────────
-  // Host uses this to associate their socket with the game they created
   socket.on('host-join', ({ roomCode }, callback) => {
     const code = (roomCode || '').toUpperCase().trim();
     const game = gm.getGame(code);
@@ -245,20 +247,16 @@ io.on('connection', (socket) => {
     if (game.hostId !== user.id) return callback?.({ error: 'Only the host can start the game' });
     if (game.status !== 'waiting') return callback?.({ error: 'Game already started' });
 
-    io.to(code).emit('game-starting', { message: 'Game is starting!', countdown: 3 });
+    io.to(code).emit('game-starting', { message: 'Loading questions...', countdown: 0 });
 
     const result = await gm.startGame(code);
-    if (result.error) {
-      return callback?.({ error: result.error });
-    }
+    if (result.error) return callback?.({ error: result.error });
 
     callback?.({ success: true });
     console.log(`[Room ${code}] Game starting`);
 
-    // Small delay then send first question
-    setTimeout(() => {
-      sendNextQuestion(code);
-    }, 3500);
+    io.to(code).emit('game-starting', { message: 'Game is starting!', countdown: 3 });
+    setTimeout(() => { sendNextQuestion(code); }, 3500);
   });
 
   // ── submit-answer ─────────────────────────────────────────────────────────
@@ -266,11 +264,8 @@ io.on('connection', (socket) => {
     const code = (roomCode || '').toUpperCase().trim();
     const result = gm.submitAnswer(code, user.id, answer);
 
-    if (result.error) {
-      return callback?.({ error: result.error });
-    }
+    if (result.error) return callback?.({ error: result.error });
 
-    // Tell the answering player their result immediately
     socket.emit('answer-result', {
       isCorrect: result.isCorrect,
       pointsEarned: result.pointsEarned,
@@ -279,19 +274,15 @@ io.on('connection', (socket) => {
 
     callback?.({ success: true });
 
-    // Check if all players have answered — end round early if so
     const game = gm.getGame(code);
-    if (game && gm.allPlayersAnswered(game)) {
-      endRoundEarly(code);
-    }
+    if (game && gm.allPlayersAnswered(game)) endRoundEarly(code);
   });
 
-  // ── kick-player (host only) ───────────────────────────────────────────────
+  // ── kick-player ───────────────────────────────────────────────────────────
   socket.on('kick-player', ({ roomCode, targetUserId }) => {
     const code = (roomCode || '').toUpperCase().trim();
     const game = gm.getGame(code);
-    if (!game) return;
-    if (game.hostId !== user.id) return;
+    if (!game || game.hostId !== user.id) return;
 
     const target = game.players.get(targetUserId);
     if (!target) return;
@@ -305,14 +296,12 @@ io.on('connection', (socket) => {
   // ── disconnect ────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     console.log(`[Socket] ${user.username} disconnected`);
-    // We keep the player in the game for reconnect; they just won't receive events
-    // until they reconnect and re-join the room
+    // Player stays in game for reconnect — they rejoin via join-room on reconnect
   });
 });
 
-// ─── Game Flow Helpers ────────────────────────────────────────────────────────
-
-const roundTimers = new Map(); // roomCode -> timeout handle
+// ─── Game Flow ────────────────────────────────────────────────────────────────
+const roundTimers = new Map();
 
 function sendNextQuestion(roomCode) {
   const game = gm.getGame(roomCode);
@@ -321,11 +310,7 @@ function sendNextQuestion(roomCode) {
   game.status = 'playing';
   const question = gm.nextQuestion(game);
 
-  if (!question) {
-    // No more questions — game over
-    endGame(roomCode);
-    return;
-  }
+  if (!question) { endGame(roomCode); return; }
 
   console.log(`[Room ${roomCode}] Question ${question.index + 1}/${game.numQuestions}`);
 
@@ -336,28 +321,19 @@ function sendNextQuestion(roomCode) {
     duration: gm.QUESTION_DURATION_MS,
   });
 
-  // Auto-end round after timer expires
-  const timer = setTimeout(() => {
-    endRound(roomCode);
-  }, gm.QUESTION_DURATION_MS + 500); // small buffer
-
+  const timer = setTimeout(() => { endRound(roomCode); }, gm.QUESTION_DURATION_MS + 500);
   roundTimers.set(roomCode, timer);
 }
 
 function endRoundEarly(roomCode) {
   const existing = roundTimers.get(roomCode);
-  if (existing) {
-    clearTimeout(existing);
-    roundTimers.delete(roomCode);
-  }
+  if (existing) { clearTimeout(existing); roundTimers.delete(roomCode); }
   endRound(roomCode);
 }
 
 function endRound(roomCode) {
   const game = gm.getGame(roomCode);
   if (!game || game.status === 'finished') return;
-
-  // Prevent double-firing
   if (game._endingRound) return;
   game._endingRound = true;
 
@@ -374,14 +350,10 @@ function endRound(roomCode) {
 
   game._endingRound = false;
 
-  const isLast = qi >= game.numQuestions - 1;
-  if (isLast) {
+  if (qi >= game.numQuestions - 1) {
     setTimeout(() => endGame(roomCode), 4000);
   } else {
-    // Pause between rounds then send next question
-    setTimeout(() => {
-      sendNextQuestion(roomCode);
-    }, 5000);
+    setTimeout(() => { sendNextQuestion(roomCode); }, 5000);
   }
 }
 
@@ -390,16 +362,9 @@ function endGame(roomCode) {
   if (!finalScoreboard) return;
 
   console.log(`[Room ${roomCode}] Game finished`);
+  io.to(roomCode).emit('game-end', { scoreboard: finalScoreboard, message: 'Game over! Final results:' });
 
-  io.to(roomCode).emit('game-end', {
-    scoreboard: finalScoreboard,
-    message: 'Game over! Final results:',
-  });
-
-  // Clean up in-memory game after a delay
-  setTimeout(() => {
-    gm.deleteGame(roomCode);
-  }, 60000);
+  setTimeout(() => { gm.deleteGame(roomCode); }, 60000);
 }
 
 // ─── Start Server ─────────────────────────────────────────────────────────────

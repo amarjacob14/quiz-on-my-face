@@ -14,13 +14,13 @@ export default function Game() {
   const { socketRef } = useSocketContext();
   const navigate = useNavigate();
 
-  const [phase, setPhase] = useState('waiting');
+  const [phase, setPhase] = useState('waiting'); // waiting | question | answered | round-end | finished
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [questionNumber, setQuestionNumber] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [duration, setDuration] = useState(20000);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [answerResult, setAnswerResult] = useState(null);
+  const [answerResult, setAnswerResult] = useState(null); // { isCorrect, pointsEarned, correctAnswer }
   const [scoreboard, setScoreboard] = useState([]);
   const [correctAnswer, setCorrectAnswer] = useState(null);
   const [finalResults, setFinalResults] = useState(null);
@@ -29,7 +29,7 @@ export default function Game() {
 
   const joinRoom = useCallback(() => {
     const socket = socketRef.current;
-    if (!socket || !socket.connected || joinedRef.current) return;
+    if (!socket || joinedRef.current) return;
     socket.emit('join-room', { roomCode }, (res) => {
       if (res?.success) joinedRef.current = true;
     });
@@ -39,34 +39,7 @@ export default function Game() {
     const socket = socketRef.current;
     if (!socket) return;
 
-    // Join immediately if already connected, otherwise wait for connect event
-    if (socket.connected) {
-      joinRoom();
-    }
-
-    function onConnect() {
-      // Re-join on (re)connect — covers both initial connect and reconnects
-      joinedRef.current = false;
-      const socket = socketRef.current;
-      if (!socket) return;
-      socket.emit('join-room', { roomCode }, (res) => {
-        if (!res?.success) return;
-        joinedRef.current = true;
-        // If game is already playing and we have a current question, restore it
-        const game = res.game;
-        if (game?.status === 'playing' && game?.currentQuestion) {
-          setCurrentQuestion(game.currentQuestion);
-          setQuestionNumber(game.questionNumber || 1);
-          setTotalQuestions(game.totalQuestions || game.numQuestions);
-          setDuration(game.duration || 20000);
-          setSelectedAnswer(null);
-          setAnswerResult(null);
-          setCorrectAnswer(null);
-          setPhase('question');
-          setTimerKey((k) => k + 1);
-        }
-      });
-    }
+    joinRoom();
 
     function onQuestion({ question, questionNumber: qn, totalQuestions: tq, duration: dur }) {
       setCurrentQuestion(question);
@@ -102,20 +75,25 @@ export default function Game() {
       navigate('/', { replace: true });
     }
 
-    socket.on('connect', onConnect);
+    function onReconnect() {
+      joinedRef.current = false;
+      joinRoom();
+    }
+
     socket.on('question', onQuestion);
     socket.on('answer-result', onAnswerResult);
     socket.on('round-end', onRoundEnd);
     socket.on('game-end', onGameEnd);
     socket.on('kicked', onKicked);
+    socket.on('connect', onReconnect);
 
     return () => {
-      socket.off('connect', onConnect);
       socket.off('question', onQuestion);
       socket.off('answer-result', onAnswerResult);
       socket.off('round-end', onRoundEnd);
       socket.off('game-end', onGameEnd);
       socket.off('kicked', onKicked);
+      socket.off('connect', onReconnect);
     };
   }, [socketRef, roomCode, navigate, joinRoom]);
 
@@ -142,18 +120,19 @@ export default function Game() {
     return null;
   }
 
+  // Waiting for game to start
   if (phase === 'waiting') {
     return (
       <div className={styles.gamePage}>
         <div className={styles.waitingScreen}>
           <div className="spinner" />
-          <p>Getting ready...</p>
-          <button className="btn btn-ghost" style={{marginTop:'1rem'}} onClick={() => navigate('/')}>✕ Leave Game</button>
+          <p>Waiting for the next question...</p>
         </div>
       </div>
     );
   }
 
+  // Between rounds
   if (phase === 'round-end') {
     const myEntry = scoreboard.find((p) => p.id === user?.id);
     return (
@@ -193,6 +172,7 @@ export default function Game() {
     );
   }
 
+  // Finished
   if (phase === 'finished') {
     return (
       <div className={styles.gamePage}>
@@ -205,12 +185,10 @@ export default function Game() {
     );
   }
 
+  // Active question
   return (
     <div className={styles.gamePage}>
       <div className={styles.questionSection}>
-        <div style={{display:'flex',justifyContent:'flex-end',padding:'0 4px 4px'}}>
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')} style={{fontSize:'0.75rem',opacity:0.6}}>✕ Leave</button>
-        </div>
         <div className={styles.timerRow}>
           <Timer
             key={timerKey}

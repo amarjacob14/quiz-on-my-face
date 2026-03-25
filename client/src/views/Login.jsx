@@ -1,23 +1,31 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import styles from './Auth.module.css';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { guestLogin } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const name = username.trim();
+    if (name.length < 2 || name.length > 20) {
+      setError('Name must be 2–20 characters');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_\- ]+$/.test(name)) {
+      setError('Name can only contain letters, numbers, spaces, hyphens and underscores');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      await guestLogin(name);
       navigate('/');
     } catch (err) {
       setError(err.message);
@@ -31,66 +39,39 @@ export default function Login() {
       <div className={styles.authCard}>
         <div className={styles.authHeader}>
           <div className="logo">Quiz on My Face</div>
-          <h1 className={styles.authTitle}>Welcome back</h1>
-          <p className={styles.authSubtitle}>Knowledge is power. Time to prove yours.</p>
+          <h1 className={styles.authTitle}>What's your name?</h1>
+          <p className={styles.authSubtitle}>No account needed. Just jump in.</p>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.authForm}>
           {error && <div className={styles.errorBanner}>{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="username">Your name</label>
             <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              type="text"
+              autoComplete="off"
+              placeholder="e.g. QuizMaster99"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              maxLength={20}
               required
               disabled={loading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
+              autoFocus
             />
           </div>
 
           <button
             type="submit"
             className="btn btn-primary btn-full btn-lg"
-            disabled={loading}
+            disabled={loading || username.trim().length < 2}
           >
-            {loading ? <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} /> : 'Sign In'}
+            {loading
+              ? <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} />
+              : "Let's Play →"}
           </button>
         </form>
-
-        <div className={styles.authFooter}>
-          <p>
-            Don&apos;t have an account?{' '}
-            <Link to="/register">Create one</Link>
-          </p>
-        </div>
-
-        {/* Future social login buttons go here */}
-        {/*
-        <div className={styles.socialDivider}>
-          <span>or continue with</span>
-        </div>
-        <button className={styles.socialBtn} onClick={handleGoogleLogin}>
-          Google
-        </button>
-        */}
       </div>
     </div>
   );

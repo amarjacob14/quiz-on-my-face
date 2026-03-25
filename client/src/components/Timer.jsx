@@ -1,46 +1,45 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styles from './Timer.module.css';
 
 export default function Timer({ duration, onExpire, running = true }) {
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const intervalRef = useRef(null);
+  const barRef = useRef(null);
   const startTimeRef = useRef(null);
+  const rafRef = useRef(null);
 
   useEffect(() => {
-    setTimeLeft(duration);
+    if (!running) return;
     startTimeRef.current = Date.now();
 
-    if (!running) return;
-
-    intervalRef.current = setInterval(() => {
+    function tick() {
       const elapsed = Date.now() - startTimeRef.current;
-      const remaining = Math.max(0, duration - elapsed);
-      setTimeLeft(Math.ceil(remaining / 1000));
+      const pct = Math.max(0, 1 - elapsed / duration) * 100;
 
-      if (remaining <= 0) {
-        clearInterval(intervalRef.current);
-        onExpire?.();
+      if (barRef.current) {
+        barRef.current.style.width = pct + '%';
+        if (pct < 25) {
+          barRef.current.className = styles.progressBar + ' ' + styles.urgent;
+        } else if (pct < 50) {
+          barRef.current.className = styles.progressBar + ' ' + styles.warning;
+        } else {
+          barRef.current.className = styles.progressBar + ' ' + styles.normal;
+        }
       }
-    }, 100);
 
-    return () => clearInterval(intervalRef.current);
+      if (elapsed >= duration) {
+        onExpire && onExpire();
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
   }, [duration, running, onExpire]);
-
-  const seconds = Math.ceil(timeLeft / 1000);
-  const pct = (timeLeft / duration) * 100;
-
-  const urgency = pct < 25 ? 'urgent' : pct < 50 ? 'warning' : 'normal';
 
   return (
     <div className={styles.timerWrap}>
-      <div className={`${styles.timerNumber} ${styles[urgency]}`}>
-        {seconds}
-      </div>
       <div className={styles.progressTrack}>
-        <div
-          className={`${styles.progressBar} ${styles[urgency]}`}
-          style={{ width: `${pct}%`, transition: 'width 0.1s linear' }}
-        />
+        <div ref={barRef} className={styles.progressBar + ' ' + styles.normal} />
       </div>
     </div>
   );
