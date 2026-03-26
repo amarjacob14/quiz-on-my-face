@@ -9,7 +9,7 @@
     "install:all": "npm install && cd client && npm install",
     "setup": "npm run install:all",
     "build": "cd client && npm install && npm run build",
-    "start": "node server/index.js"
+    "start": "NODE_ENV=production node server/index.js"
   },
   "engines": {
     "node": ">=18.0.0"
